@@ -1,101 +1,197 @@
-# AI 활용 자유 주제 파이썬 미니 프로젝트
-# 이름 또는 학번: 
-# 프로젝트 주제: 
+import os
+import random
+import sys
+import time
 
-# ============================================================
-# 사용 안내
-# ------------------------------------------------------------
-# 이 파일은 예시 골격입니다.
-# 그대로 제출하지 말고, 반드시 자신의 주제에 맞게 수정하세요.
-#
-# 필수 조건
-# 1. 2차원 리스트 사용
-# 2. 함수 2개 이상, 가능하면 3개 이상 분리
-# 3. 조건문 사용
-# 4. 반복문 사용
-# 5. 실행 결과 출력
-# ============================================================
+if os.name == 'nt':
+    import msvcrt
+else:
+    import tty
+    import termios
 
-
-# ------------------------------------------------------------
-# 1. 데이터 준비: 2차원 리스트
-# ------------------------------------------------------------
-# 아래 예시는 "활동 추천 프로그램"입니다.
-# 자신의 주제에 맞게 data를 만드세요.
-#
-# 현재 열의 의미:
-# 0번 열: 활동 이름
-# 1번 열: 필요한 시간(분)
-# 2번 열: 추천 기분
-# 3번 열: 활동 유형
-# ------------------------------------------------------------
-
-activities = [
-    ["산책하기", 30, "피곤", "운동"],
-    ["짧은 낮잠", 20, "피곤", "휴식"],
-    ["좋아하는 음악 듣기", 10, "우울", "휴식"],
-    ["문제집 3쪽 풀기", 40, "차분", "공부"],
-    ["방 정리하기", 25, "답답", "생활"],
-    ["친구에게 연락하기", 15, "우울", "소통"],
-]
-
-
-# ------------------------------------------------------------
-# 2. 함수 정의
-# ------------------------------------------------------------
-
-def show_intro():
-    """프로그램 제목과 안내를 출력한다."""
-    print("=" * 40)
-    print("AI 활용 자유 주제 파이썬 미니 프로젝트")
-    print("예시: 기분과 시간에 따른 활동 추천기")
-    print("=" * 40)
-
-
-def get_user_input():
-    """사용자에게 기분과 남은 시간을 입력받는다."""
-    mood = input("현재 기분을 입력하세요. 예: 피곤, 우울, 차분, 답답: ")
-    minutes = int(input("사용 가능한 시간을 분 단위로 입력하세요: "))
-    return mood, minutes
-
-
-def find_recommendations(data, mood, minutes):
-    """2차원 리스트를 반복하며 조건에 맞는 활동을 찾는다."""
-    results = []
-
-    for row in data:
-        name = row[0]
-        required_minutes = row[1]
-        recommended_mood = row[2]
-        activity_type = row[3]
-
-        # 조건문: 사용자의 기분과 시간이 활동 조건에 맞는지 판단한다.
-        if recommended_mood == mood and required_minutes <= minutes:
-            results.append([name, required_minutes, activity_type])
-
-    return results
-
-
-def print_result(results):
-    """추천 결과를 출력한다."""
-    print("\n[추천 결과]")
-
-    if len(results) == 0:
-        print("조건에 맞는 활동이 없습니다.")
-        print("시간을 늘리거나 다른 기분을 입력해 보세요.")
+def get_char():
+    if os.name == 'nt':
+        return msvcrt.getch().decode('utf-8', errors='ignore').lower()
     else:
-        for item in results:
-            print(f"- {item[0]} / {item[1]}분 / 유형: {item[2]}")
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch.lower()
 
+def init_game():
+    global p_x, p_y, my_party, map_size, pokemon_db
+    p_x, p_y = 16, 16
+    map_size = 32
+    pokemon_db = [
+        ["피카츄", 50, 50, 15],
+        ["파이리", 60, 60, 12],
+        ["꼬부기", 55, 55, 13],
+        ["이상해씨", 58, 58, 11],
+        ["구구", 40, 40, 8],
+        ["꼬렛", 35, 35, 7]
+    ]
+    my_party = [["피카츄", 50, 50, 15]]
+
+def draw_map():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    for y in range(map_size):
+        row = ""
+        for x in range(map_size):
+            if x == p_x and y == p_y:
+                row += "P "
+            elif x == 0 or x == map_size - 1 or y == 0 or y == map_size - 1:
+                row += "# "
+            else:
+                row += ". "
+        print(row)
+    print("\n[WASD] 이동 | [Q] 종료")
+
+def battle():
+    os.system('cls' if os.name == 'nt' else 'clear')
+    print("⚠️ 야생의 포켓몬이 나타났다!")
+    time.sleep(1)
+    
+    enemy = list(random.choice(pokemon_db))
+    enemy_name = enemy[0]
+    enemy_max_hp = enemy[1]
+    enemy_hp = enemy[2]
+    enemy_atk = enemy[3]
+    
+    cur_idx = 0
+    
+    while enemy_hp > 0 and len(my_party) > 0:
+        os.system('cls' if os.name == 'nt' else 'clear')
+        my_p = my_party[cur_idx]
+        
+        print(f"=== 전투 화면 ===")
+        print(f"상대: {enemy_name} (HP: {enemy_hp}/{enemy_max_hp})")
+        print(f"나의 포켓몬: {my_p[0]} (HP: {my_p[1]}/{my_p[2]})")
+        print("-----------------")
+        print("1. 싸우기 | 2. 가방 (몬스터볼/상처약) | 3. 포켓몬 교체 | 4. 도망치기")
+        
+        sel = get_char()
+        
+        if sel == '1':
+            dmg = my_p[3]
+            enemy_hp -= dmg
+            print(f"\n{my_p[0]}의 공격! {enemy_name}에게 {dmg}의 피해!")
+            time.sleep(1)
+            
+            if enemy_hp <= 0:
+                print(f"\n{enemy_name}을(를) 쓰러뜨렸다!")
+                time.sleep(1)
+                break
+                
+        elif sel == '2':
+            print("\n[가방] 1. 몬스터볼 (무한) | 2. 상처약 (무한)")
+            bag_sel = get_char()
+            if bag_sel == '1':
+                prob = (1 - (enemy_hp / enemy_max_hp)) * 100
+                if prob < 20: prob = 20
+                
+                print("\n몬스터볼을 던졌다!")
+                time.sleep(1)
+                
+                if random.randint(1, 100) <= prob:
+                    print(f"\n🎉 {enemy_name}을(를) 붙잡았다!")
+                    if len(my_party) < 6:
+                        my_party.append([enemy_name, enemy_max_hp, enemy_max_hp, enemy_atk])
+                        print(f"{enemy_name}이(가) 동료가 되었다!")
+                    else:
+                        print("포켓몬이 가득 차서 보낼 수 없습니다. (최대 6마리)")
+                    time.sleep(1.5)
+                    break
+                else:
+                    print(f"\n아깝다! {enemy_name}이(가) 탈출했다!")
+                    time.sleep(1)
+            elif bag_sel == '2':
+                heal = int(my_p[2] * 0.5)
+                my_p[1] += heal
+                if my_p[1] > my_p[2]:
+                    my_p[1] = my_p[2]
+                print(f"\n상처약을 사용했다! {my_p[0]}의 HP가 {heal}만큼 회복되었다.")
+                time.sleep(1)
+                continue
+            else:
+                continue
+                
+        elif sel == '3':
+            print("\n=== 포켓몬 파티 ===")
+            for i, p in enumerate(my_party):
+                print(f"{i+1}. {p[0]} (HP: {p[1]}/{p[2]})")
+            print("교체할 포켓몬 번호를 누르세요 (취소: 0)")
+            
+            ch_sel = get_char()
+            if ch_sel.isdigit():
+                idx = int(ch_sel) - 1
+                if 0 <= idx < len(my_party):
+                    if my_party[idx][1] <= 0:
+                        print("\n그 포켓몬은 기절해서 싸울 수 없다!")
+                        time.sleep(1)
+                    else:
+                        cur_idx = idx
+                        print(f"\n가라, {my_party[cur_idx][0]}!")
+                        time.sleep(1)
+                        continue
+            continue
+            
+        elif sel == '4':
+            print("\n무사히 도망쳤다!")
+            time.sleep(1)
+            break
+        else:
+            continue
+            
+        if enemy_hp > 0:
+            e_dmg = enemy_atk
+            my_p[1] -= e_dmg
+            print(f"\n{enemy_name}의 공격! {my_p[0]}은(는) {e_dmg}의 피해를 입었다.")
+            time.sleep(1)
+            
+            if my_p[1] <= 0:
+                my_p[1] = 0
+                print(f"\n{my_p[0]}이(가) 쓰러졌다!")
+                time.sleep(1)
+                
+                alive = False
+                for i, p in enumerate(my_party):
+                    if p[1] > 0:
+                        cur_idx = i
+                        alive = True
+                        print(f"\n자동으로 {p[0]}이(가) 출전합니다!")
+                        time.sleep(1)
+                        break
+                
+                if not alive:
+                    print("\n💀 모든 포켓몬이 전멸했습니다... GAME OVER")
+                    time.sleep(2)
+                    init_game()
+                    break
 
 def main():
-    show_intro()
-    mood, minutes = get_user_input()
-    results = find_recommendations(activities, mood, minutes)
-    print_result(results)
+    init_game()
+    while True:
+        draw_map()
+        key = get_char()
+        global p_x, p_y
+        next_x, next_y = p_x, p_y
+        if key == 'w': next_y -= 1
+        elif key == 's': next_y += 1
+        elif key == 'a': next_x -= 1
+        elif key == 'd': next_x += 1
+        elif key == 'q':
+            break
+            
+        if 0 < next_x < map_size - 1 and 0 < next_y < map_size - 1:
+            
+            p_x, p_y = next_x, next_y
+            
+            if random.randint(1, 100) <= 15:
+                battle()
 
-
-# ------------------------------------------------------------
-# 3. 프로그램 실행
-# ------------------------------------------------------------
-main()
+if __name__ == "__main__":
+    main()
